@@ -1,0 +1,46 @@
+<div class="banner gap">
+    <div class="banner-box">
+        <div class="banner-pic ak1-swiper ak1-swiper-image" data-effect="slide" data-pagination=".nav-name"
+            data-pagination-class="name" data-pagination-active-class="active" data-loop="true">
+            <div class="swiper-wrapper">
+                {maccms:vod num="7" type="current" level="9" order="desc" by="time"}
+                <div class="swiper-slide">
+                    <a class="swiper-lazy" href="{:mac_url_vod_play($vo,['sid'=>$vo.sid,'nid'=>$vo.nid])}" style="background-image: url({$vo.vod_pic_slide|mac_url_img});" title="{$vo.vod_name}">
+                        <div class="banner-nav-box">
+                            <div class="swiper-pagination-html" style="display: none;">
+                                <h3>{$vo.vod_name}</h3>
+                                <p>{$vo.vod_remarks}</p>
+                            </div>
+                            <div class="slide-btn-box hidden-xs">
+                                <a class="play-btn" href="{:mac_url_vod_play($vo,['sid'=>$vo.sid,'nid'=>$vo.nid])}"><i class="iconfont icon-play-mini"></i>&nbsp;&nbsp;立即观看</a>
+                                {if condition="$maccms.user_status eq 1"}
+                                {if condition="$user.group.group_id eq 1"}
+                                <a class="fav-btn ak1-ulog" href="javascript:;" onclick="Myui.User.Login();"><i class="iconfont icon-love"></i></a>
+                                {else}
+                                <a class="fav-btn ak1-ulog ak1-ulog-get favorite" href="javascript:;" data-id="{$vo.id}" data-mid="1" data-type="2"><i class="iconfont icon-love"></i></a>
+                                {/if}
+                                {/if}
+                            </div>
+                        </div>
+                    </a>
+                    <div class="m-slide-btn-box">
+                        <div class="m-detail-box">
+                        <span class="title text-overflow">{$vo.vod_name}</span>
+                        <div class="tags">
+                            <span class="score"><span class="iconfont icon-pingfen"></span>{$vo.vod_score}</span>
+                            <span class="tag">{$vo.type.type_name}</span>
+                        </div>
+                        <span class="content text-overflow-2">{$vo.vod_content}</span>
+                        </div>
+                    </div>
+                </div>
+				{if $key eq 1}{assign name="banner_pic" value="1" /}{/if}
+                {/maccms:vod}
+            </div>
+			{notpresent name="banner_pic"}<style>.row.type-list {margin-top: 0px;}</style>{/notpresent}
+            <div class="banner-nav-box hidden-xs">
+                <div class="nav-name"></div>
+            </div>
+        </div>
+    </div>
+</div>
