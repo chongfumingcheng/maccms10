@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {include file="public/include"}
+</head>
+
+<body id="index">
+    {include file="public/header"}
+    <main>
+        <div class="container">
+            {include file="index/index_slide"}
+            <div class="row">
+				{include file="index/recommend"}
+				{include file="index/hot"}
+				{include file="block/vod_tuijian"}
+				{maccms:type ids="parent" mid="1" order="asc" by="sort" id="for" key="key2"}
+                {include file="block/vod_list1"}
+                {/maccms:type}
+                <!-- <div id="install-prompt">
+				<div class="kuangjia">
+				<img style="margin-right: 10px;" src="{$ak1.basic.favicon}" width="32" height="32">把{$maccms.site_name}添加到桌面快捷方式<div class="tooltip">?<span class="tooltiptext">将网站安装至桌面应用可以快速打开使用{$maccms.site_name}</span></div><button class="install-btn btn" onclick="addToDesktop()">立刻添加</button><span class="pwa-close-btn" onclick="closePrompt()">下次再说</span>
+				</div>
+			    </div> -->
+            </div>
+        </div>
+    </main>
+    {include file="public/footer"}
+</body>
+</html>

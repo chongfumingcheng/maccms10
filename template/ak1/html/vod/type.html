@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {include file="public/include"}
+</head>
+<body class="type">
+    {include file="public/header"}
+    <main>
+        <div class="container">
+            {include file="block/vod_slide"}
+            <div class="row">
+                <div class="screen-box">
+                    <div class="filter-box">
+  <div class="filter-title">{$obj.type_name} 子分类</div>
+  <div class="filter-ul">
+    <!-- 全部子分类 -->
+    <a class="filter-li" href="{:mac_url_type($obj, $param, 'show')}">全部</a>
+    
+
+{assign name="temp_type_id" value="$obj.type_id"}
+
+
+{maccms:type parent="{$temp_type_id}" order="asc" by="sort" id="sub_type" num="10"}
+  <a class="filter-li" href="{:mac_url_type($sub_type, $param, 'show')}">
+    {$sub_type.type_name}
+  </a>
+{/maccms:type}
+  </div>
+</div>
+
+<!-- 视频列表循环（修正后） -->
+<div class="vod-list-box">
+    {include file="block/vod_hot"}
+    {include file="block/vod_new"}
+    <!-- 正确使用 {maccms:type} 标签 -->
+    {maccms:type parent="{$obj.type_id}" order="asc" by="sort" id="list_type" key="key_list"}
+        {include file="block/vod_list1"}
+    {/maccms:type}
+</div>
+            </div>
+        </div>
+    </main>
+    {include file="public/footer"}
+</body>
+</html>

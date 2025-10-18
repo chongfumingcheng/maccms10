@@ -1,0 +1,176 @@
+<header class="myui-header__top" {if condition="$maccms.aid eq '14' || $maccms.aid eq '15'" }id="play_header" {/if}>
+    <div class="row">
+        <div class="detail-top  {if condition=" $maccms.aid eq 14 || $maccms.aid eq 15"}header-show{/if}">
+            <span>
+                <a href="javascript:void(0);" onclick="history.back();">
+                    <i class="iconfont icon-back"></i>
+                </a>
+            </span>
+        </div>
+        <div class="menu {if condition=" $maccms.aid eq 14 || $maccms.aid eq 15"}header-hide{/if}">
+            <a style="height:100%" href="/">
+                <div class="logo"><img src="{$maccms.site_logo}"></div>
+            </a>
+            <a href="/">
+                <div class="nav  {if condition="($maccms.aid eq 1)"} active{/if}">首页</div>
+            </a>
+			{php} 
+            $type_id = $GLOBALS['type_pid'] ? $GLOBALS['type_pid'] : $GLOBALS['type_id'];
+            {/php}
+			{maccms:type ids="parent" mid="1" order="asc" by="sort"}
+            <a href="{:mac_url_type($vo)}">
+                <div class="nav {if condition="($vo.type_id eq $type_id)"} active{/if}">{$vo.type_name}</div>
+             </a>
+            {/maccms:type}
+        </div>
+        <div class="search">
+            <div class="search-box">
+                <form id="search" method="get" name="search" action="{:mac_url('vod/search')}"
+                    onSubmit="return qrsearch();">
+                    <input type="text" name="wd" placeholder="请输入要搜索的关键词" value="{$param.wd}" class="search-field" />
+                    <button type="submit" id="search_btn"><span class="iconfont icon-search"></span></button>
+                </form>
+                <div class="hot-recommend-box hidden">
+                    <div class="search-history-box">
+                        <div class="search-history-title">搜索历史
+                            <div class="clear-icon" id="clear-search-history">
+                                <i class="iconfont icon-del"></i>
+                            </div>
+                        </div>
+                        <div class="search-history"></div>
+                    </div>
+
+                    <div class="hot-search-box">
+                        <div class="hot-search-title">热门搜索：</div>
+                        <div class="hot-search-list">
+                            {maccms:foreach name=":explode(',',''.$maccms['search_hot'].'')" id="vo" key="key"}
+                            <div class="item">
+                                <div class="nums"><span class="num">{$key+1}</span><span class="rankBg"></span></div>
+                                <a href="{:mac_url('vod/search',['wd'=>$vo])}" title="{$vo}">
+                                    <div class="title">{$vo}</div>
+                                </a>
+                            </div>
+                            {/maccms:foreach}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="icons icon1 hidden-md hidden-xs">
+                <a class="link" href="{:mac_url('label/rank')}">
+                    <span class="iconfont icon-ranking"></span>
+                    <div class="iconName">排行榜</div>
+                </a>
+            </div>
+            <div class="icons icon2 hidden-md hidden-xs">
+                <span class="iconfont icon-history"></span>
+                <div class="iconName">历史</div>
+                <div class="dropdownBox fadeInDown dropBoxHidden">
+                    <div class="history-box">
+                        <div class="title"><span>播放记录</span></div>
+                        <div class="list">
+                            <script type="text/javascript">
+                                var history_get = MyTheme.Cookie.Get("history");
+                                if (history_get) {
+                                    var json = eval("(" + history_get + ")");
+                                    for (i = 0; i < json.length; i++) {
+                                        document.write("<a rel='nofollow' href='" + json[i].link + "'><div islight='light' class='desc'><div class='name'>" + json[i].name + "</div><div class='type'>" + json[i].remarks + "</div></div></a>");
+                                    }
+                                }
+                                else {
+                                    document.write("您还没有看过影片哦");
+                                }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="icons icon3 hidden-md hidden-xs">
+                <a class="link" rel="nofollow" href="{:mac_url('gbook/index')}">
+                    <span class="iconfont icon-msg2"></span>
+                    <div class="iconName">求片</div>
+                    <div class="qiupianBg">求片</div>
+                </a>
+            </div>
+            {if condition="$user.group.group_id eq 1"}
+            <div class="icons icon5">
+                <a href="{:mac_url('user/login')}">
+                    <div class="image">登录</div>
+                </a>
+            </div>
+            {else}
+            <div class="icons icon5 islogin">
+                <a href="{:mac_url('user/index')}">
+                    <div class="image"></div>
+                    <div class="dropdownBox fadeInDown dropBoxHidden">
+
+                        <div class="user-menu"><a class="link" href="{:mac_url('user/index')}"><span
+                                    class="iconfont icon-user "></span>
+                                <div>个人中心</div>
+                            </a></div>
+
+                        <div class="user-menu"><a class="link" href="{:mac_url('user/favs')}"><span
+                                    class="iconfont icon-list "></span>
+                                <div>我的收藏</div>
+                            </a></div>
+
+                        <div class="user-menu"><a class="link" href="{:mac_url('user/plays')}"><span
+                                    class="iconfont icon-list2 "></span>
+                                <div>播放记录</div>
+                            </a></div>
+
+                        <div class="user-menu"><a class="link logout"
+                                href="{:mac_url('user/logout')}"><span>退出</span></a></div>
+
+                    </div>
+                </a>
+            </div>
+            {/if}
+        </div>
+    </div>
+    <div class="main_nav {if condition=" $maccms.aid eq '14' || $maccms.aid eq '15'"}hidden-xs{else}visible-xs{/if}"">
+        <ul class=" tab_head">
+        <li class="tab_item"><a href="/">
+                <div class="nav {if !$GLOBALS['type_id']}active{/if}">首页</div>
+            </a></li>
+        {maccms:type ids="parent" mid="1" order="asc" by="sort"}
+        <li class="tab_item">
+            <a href="{:mac_url_type($vo)}">
+                <div class="nav {if condition=" ($vo.type_id eq $GLOBALS['type_id'])"} active{/if}">{$vo.type_name}</div></a>
+        </li>
+        {/maccms:type}
+        </ul>
+    </div>
+</header>
+<script>
+    window.onload = function () {
+        var screenWidth = window.innerWidth;
+        if (screenWidth < 800) {
+            var searchBox = document.querySelector('.search-box');
+            var newLink = document.createElement('a');
+            newLink.href = '{:mac_url("label/search")}';
+            searchBox.parentNode.insertBefore(newLink, searchBox);
+            newLink.appendChild(searchBox);
+        }else{
+            $('.search-field').focus(function() {
+                $('.hot-recommend-box').removeClass('hidden').addClass('visible');
+            });
+            $('.search-field').blur(function() {
+                setTimeout(function() {
+                    if (!$(event.relatedTarget).closest('.hot-recommend-box').length) {
+                        $('.hot-recommend-box').removeClass('visible').addClass('hidden');
+                    }
+                }, 0);
+            });
+            $('.hot-recommend-box').on('mouseenter', function() {
+                $(this).data('hovered', true);
+            }).on('mouseleave', function() {
+                $(this).data('hovered', false);
+            });
+            $(document).on('blur', '.search-field', function(event) {
+                if (!$('.hot-recommend-box').data('hovered')) {
+                    $('.hot-recommend-box').removeClass('visible').addClass('hidden');
+                }
+            });
+        }
+    };
+</script>

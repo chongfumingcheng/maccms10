@@ -1,0 +1,61 @@
+<div class="ak1-recommend hidden-md hidden-xs">
+    <div class="ak1-recommend-box"> 
+        <div class="notice-box">
+            <div class="ann-icon"><i class="iconfont icon-notify"></i></div>
+            <div class="ann-text">
+                <p>
+                    <span>这里是公告提示</span>
+                </p>
+            </div>
+        </div>
+        <div class="category-box left">
+            {maccms:foreach name="$ak1['module']['data']" id="vo" key="key"}
+            {if condition="$key lt '3'"}
+            {if $vo.is}
+            <div class="item">
+                {if condition="$vo.type eq 'web'"} 
+                <a href="{$vo.val}">
+                    <div class="head"><span class="iconfont {$vo.icon}"></span><div class="name">{$vo.title}</div></div>
+                </a>
+                {elseif condition="$vo.type eq 'url'"}
+                <a href="{:mac_url($vo.val)}"><div class="head"><span class="iconfont {$vo.icon}"></span><div class="name">{$vo.title}</div></div></a>
+                {else /}
+                    <a href="{:mac_url_type(['type_mid'=>$vo.type,'type_id'=>$vo.val])}"><div class="head"><span class="iconfont {$vo.icon}"></span><div class="name">{$vo.title}</div></div></a>
+                {/if}
+                <div class="content">
+                    {maccms:type order="asc" by="sort" ids="'.$vo['fval'].'"}
+                    <a href="{:mac_url_type($vo,[],'show')}">{$vo.type_name}</a>
+                    {/maccms:type}
+                </div>
+            </div>
+            {/if}
+            {/if}
+            {/maccms:foreach}      
+        </div>
+        <div class="category-box right">
+            {maccms:foreach name="$ak1['module']['data']" id="vo" key="key"}
+            {if condition="$key gt '2'"}
+            {if $vo.is}
+            <div class="item">
+                {if condition="$vo.type eq 'web'"} 
+                <a href="{$vo.val}">
+                    <div class="head"><span class="iconfont {$vo.icon}"></span><div class="name">{$vo.title}</div></div>
+                </a>
+                {elseif condition="$vo.type eq 'url'"}
+                <a href="{:mac_url($vo.val)}"><div class="head"><span class="iconfont {$vo.icon}"></span><div class="name">{$vo.title}</div></div></a>
+                {else /}
+                    <a href="{:mac_url_type(['type_mid'=>$vo.type,'type_id'=>$vo.val])}"><div class="head"><span class="iconfont {$vo.icon}"></span><div class="name">{$vo.title}</div></div></a>
+                {/if}
+
+                <div class="content">
+                    {maccms:type order="asc" by="sort" ids="'.$vo['fval'].'"}
+                    <a href="{:mac_url_type($vo,[],'show')}">{$vo.type_name}</a>
+                    {/maccms:type}
+                </div>
+            </div>
+            {/if}
+            {/if}
+            {/maccms:foreach}   
+        </div>
+    </div>
+</div>

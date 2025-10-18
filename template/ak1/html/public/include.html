@@ -1,0 +1,33 @@
+<meta charset="utf-8">
+<meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" id="viewport" name="viewport" />
+{include file="public/seo"}
+<link rel="manifest" href="{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/app/manifest.json">
+<link rel="shortcut icon" href="{$ak1.basic.favicon}" type="image/x-icon" />
+<link rel="stylesheet" href="{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/css/ak1-font.css" type="text/css"/>
+<link href="{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/css/ak1-site.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/js/jquery.min.js?v=3.3.1"></script>
+<script type="text/javascript" src="{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/js/layer/layer.js?v3.1.1"></script>
+<script type="text/javascript" src="{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/js/ak1-plugins.js?v={$my['version']}"></script>
+<script type="text/javascript" src="{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/js/ak1-site.js?v={$my['version']}"></script>
+<script type="text/javascript" src="{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/js/ak1-cms.js?v={$my['version']}"></script>
+<script type="text/javascript" src="{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/js/ak1-ui.js?v={$my['version']}"></script>
+<script src="{$maccms.path}static/js/home.js"></script>
+<script>
+(function(){try{var d=document.documentElement;var n='data-theme';var s='setAttribute';var e=localStorage.getItem('theme');if('system'===e||(!e&&false)){var t='(prefers-color-scheme: dark)';var m=window.matchMedia(t);if(m.media!==t||m.matches){d.style.colorScheme='dark';d[s](n,'dark')}else{d.style.colorScheme='light';d[s](n,'light')}}else if(e){d[s](n,e||'')}else{d[s](n,'dark')}if(e==='light'||e==='dark'||!e){d.style.colorScheme=e||'dark'}}catch(e){}})();
+</script>
+<script>var maccms={"path":"__ROOT__","mid":"{$maccms['mid']}","url":"{$maccms['site_url']}","wapurl":"{$maccms['site_wapurl']}","mob_status":"{$maccms['mob_status']}","domain":"{$ak1.binding.domain}","tpl":"{$maccms.path_tpl}"};</script>
+{php}$static = $ak1['basic']['static_is']==1?$ak1['basic']['static']:'';{/php}
+{include file="public/style"}
+<script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('{$ak1.basic.static|mac_default=''.$maccms.path_tpl.''}statics/app/service-worker.js')
+          .then(registration => {
+            console.log('Service Worker registered:', registration);
+          })
+          .catch(error => {
+            console.log('Service Worker registration failed:', error);
+          });
+      });
+    }
+</script>

@@ -1,0 +1,48 @@
+<div class="banner gap">
+    <div class="banner-box">
+        <div class="banner-pic ak1-swiper ak1-swiper-image" data-effect="slide" data-pagination=".nav-name" data-pagination-class="name" data-pagination-active-class="active" data-loop="true">
+            <div class="swiper-wrapper">
+                {maccms:vod num="8" type="all" order="desc" by="time" level="9"}
+				<div class="swiper-slide">
+                    <a class="swiper-lazy" href="{:mac_url_vod_detail($vo)}" style="background-image: url({$vo.vod_pic_slide|mac_url_img});" title="{$vo.vod_name}">
+                    </a>
+                    <div class="banner-nav-box">
+                        <a class="swiper-lazy" href="{:mac_url_vod_detail($vo)}" style="background-image: url({$vo.vod_pic_slide|mac_url_img});" title="{$vo.vod_name}">
+                            <div class="swiper-pagination-html" style="display: none;">
+                                <h3>{$vo.vod_name}</h3>
+                                <p>{$vo.vod_version}</p>
+                            </div>
+                        </a>
+                        <div class="slide-btn-box hidden-xs">
+							<a class="play-btn" href="{:mac_url_vod_play($vo,['sid'=>1,'nid'=>1])}"><i class="iconfont icon-play-mini"></i>&nbsp;&nbsp;立即观看</a>
+                            {if condition="$maccms.user_status eq 1"}
+                                {if condition="$user.group.group_id eq 1"}
+                                <a class="fav-btn ak1-ulog" href="javascript:;" onclick="Myui.User.Login();"><i class="iconfont icon-love"></i></a>
+                                {else}
+                                <a class="fav-btn ak1-ulog ak1-ulog-get favorite" href="javascript:;" data-id="{$vo.id}" data-mid="1" data-type="2"><i class="iconfont icon-love"></i></a>
+                                {/if}
+                            {/if}
+                        </div>
+                    </div>
+                    <div class="m-slide-btn-box">
+                        <div class="m-detail-box">
+                            <span class="title text-overflow">{$vo.vod_name}</span>
+                            <div class="tags text-overflow">
+                                <span class="score"><span class="iconfont icon-pingfen"></span>{$vo.vod_score}</span>
+								{maccms:foreach name=":explode(',',$vo.vod_class)" id="voo"}
+								<span class="tag"><a href="{:mac_url_type($voo['type'],['class'=>$voo],'show')}">{$voo}</a></span>
+								{if $key>1}{php}break;{/php}{/if}
+								{/maccms:foreach}
+                            </div>
+                            <span class="content text-overflow-2">{$vo.vod_blurb}..........</span>
+                        </div>
+                    </div>
+                </div>
+				{/maccms:vod}
+            </div>
+            <div class="banner-nav-box hidden-xs">
+                <div class="nav-name"></div>
+            </div>
+        </div>
+    </div>
+</div>

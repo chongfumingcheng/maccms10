@@ -1,0 +1,48 @@
+<footer class="hidden-md">本站所有视频和图片均来自互联网收集而来，版权归原创者所有，本网站只提供web页面服务，并不提供资源存储，也不参与录制、上传。</footer>
+
+<div class="side-top">
+    <a class="svg-box go-home" href="/"></a>
+    <a class="svg-box toggle" href="javascript:;" id="theme-switcher">
+        <span class="iconfont icon-yejian"></span>
+    </a>
+    <a class="backtop svg-box" href="javascript:;">
+        <span class="iconfont icon-gotop"></span>
+    </a>
+</div>
+{include file="public/ajax-login"}
+<script>
+$(document).ready(function () {
+    var mark = true;
+    header = $('.myui-header__top');
+    $(window).scroll(function () {
+        var scrollheight = parseInt($(document).scrollTop());
+        if (scrollheight >= 300) {
+            if (mark) {
+                mark = false;
+                header.addClass("header-bg");
+            }
+        } else {
+            if (!mark) {
+                mark = true;
+                header.removeClass("header-bg");
+            }
+        }
+    });
+    $('#theme-switcher').on('click', function() {
+        var currentTheme = localStorage.getItem('theme') || 'dark';
+        var newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        localStorage.setItem('theme', newTheme);
+        applyTheme();
+    });
+    function applyTheme() {
+        var currentTheme = localStorage.getItem('theme') || 'dark';
+        $('html').attr('data-theme', currentTheme);
+    }
+    if (!localStorage.getItem('theme')) {
+        localStorage.setItem('theme', 'dark');
+    }
+    applyTheme();
+});
+</script>
+{$maccms['site_tj']}
+<script>function updateInstallPrompt(){if(window.innerWidth<559){var installPrompt=document.querySelector('#install-prompt .kuangjia');if(installPrompt){installPrompt.innerHTML=`<img style="margin-right: 10px;"src="{$ak1.basic.favicon}"width="32"height="32">安装到手机<div class="tooltip">?<span class="tooltiptext">将网站安装至桌面应用可以快速打开使用{$maccms.site_name}</span></div><button class="install-btn btn"onclick="addToDesktop()">立刻添加</button><span class="pwa-close-btn"onclick="closePrompt()">下次再说</span>`}}}document.addEventListener('DOMContentLoaded',function(){updateInstallPrompt();window.addEventListener('resize',updateInstallPrompt)});</script><script>var dfdPrompt=null;var installPromptDiv=document.getElementById('install-prompt');function shouldShowInstallPrompt(){const oneDay=168*60*60*1000;const lastClosed=localStorage.getItem('installPromptClosed');if(lastClosed){const now=Date.now();return now-lastClosed>oneDay}return true}function showInstallPrompt(){if(dfdPrompt&&shouldShowInstallPrompt()){installPromptDiv.style.display='block'}}function closePrompt(){installPromptDiv.style.display='none';localStorage.setItem('installPromptClosed',Date.now())}window.addEventListener('beforeinstallprompt',function(e){dfdPrompt=e;e.preventDefault();showInstallPrompt()});function addToDesktop(){if(dfdPrompt){dfdPrompt.prompt();dfdPrompt.userChoice.then(function(choiceResult){console.log(choiceResult.outcome);closePrompt();dfdPrompt=null})}else{console.log('添加到主屏幕的功能不可用。')}}window.onload=showInstallPrompt;</script>
