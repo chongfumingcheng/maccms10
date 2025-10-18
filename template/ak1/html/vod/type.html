@@ -14,14 +14,14 @@
   <div class="filter-title">{$obj.type_name} 子分类</div>
   <div class="filter-ul">
     <!-- 全部子分类 -->
-    <a class="filter-li" href="{:mac_url_type($obj, $param, 'show')}">全部</a>
+    <a class="filter-li" href="{:mac_url_type($obj, ['area'=>$param['area'],'lang'=>$param['lang'],'year'=>$param['year'],'level'=>$param['level'],'letter'=>$param['letter'],'state'=>$param['state'],'tag'=>$param['tag'],'class'=>$param['class'],'order'=>$param['order'],'by'=>$param['by'] ], 'show')}">全部</a>
     
 
 {assign name="temp_type_id" value="$obj.type_id"}
 
 
 {maccms:type parent="{$temp_type_id}" order="asc" by="sort" id="sub_type" num="10"}
-  <a class="filter-li" href="{:mac_url_type($sub_type, $param, 'show')}">
+  <a class="filter-li" href="{:mac_url_type($sub_type, ['area'=>$param['area'],'lang'=>$param['lang'],'year'=>$param['year'],'level'=>$param['level'],'letter'=>$param['letter'],'state'=>$param['state'],'tag'=>$param['tag'],'class'=>$param['class'],'order'=>$param['order'],'by'=>$param['by'] ], 'show')}">
     {$sub_type.type_name}
   </a>
 {/maccms:type}
