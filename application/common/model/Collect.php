@@ -423,6 +423,110 @@ class Collect extends Base {
     }
 
     /**
+     * 统计播放组集数
+     */
+    private function getPlayGroupEpisodeCount($v, $play_group_episode_count = [])
+    {
+        // 如果播放地址更新没有统计集数，则在这里统计
+        if (empty($play_group_episode_count) && !empty($v['vod_play_from'])) {
+            $tmp_play_from_arr = explode('$$$', $v['vod_play_from']);
+            $tmp_play_url_arr = explode('$$$', $v['vod_play_url']);
+            foreach ($tmp_play_from_arr as $tmp_k => $tmp_play_from) {
+                if (!empty($tmp_play_from) && isset($tmp_play_url_arr[$tmp_k])) {
+                    $tmp_episode_count = empty($tmp_play_url_arr[$tmp_k]) ? 0 : count(explode('#', $tmp_play_url_arr[$tmp_k]));
+                    $play_group_episode_count[$tmp_play_from] = $tmp_episode_count;
+                }
+            }
+        }
+
+        return $play_group_episode_count;
+    }
+
+    /**
+     * 找出集数最多的播放组
+     */
+    private function findMaxEpisodePlayGroup($play_group_episode_count)
+    {
+        if (empty($play_group_episode_count)) {
+            return '';
+        }
+        // 找出集数最多的播放组
+        $max_episode_count = 0;
+        $max_episode_play_from = '';
+        foreach ($play_group_episode_count as $play_from => $episode_count) {
+            if ($episode_count > $max_episode_count) {
+                $max_episode_count = $episode_count;
+                $max_episode_play_from = $play_from;
+            }
+        }
+
+        return $max_episode_play_from;
+    }
+
+    /**
+     * 根据播放组获取备注
+     */
+    private function getRemarksByPlayGroup($v, $update, $max_episode_play_from)
+    {
+        if (empty($max_episode_play_from)) {
+            return null;
+        }
+
+        // 使用更新后的 vod_play_note，如果已经在前面更新过
+        $current_play_note = isset($update['vod_play_note']) ? $update['vod_play_note'] : $v['vod_play_note'];
+        $play_from_arr = explode('$$$', $v['vod_play_from']);
+        $play_note_arr = explode('$$$', $current_play_note);
+        $max_play_key = array_search($max_episode_play_from, $play_from_arr);
+
+        if ($max_play_key !== false && isset($play_note_arr[$max_play_key]) && !empty($play_note_arr[$max_play_key])) {
+            return $play_note_arr[$max_play_key];
+        }
+
+        // 如果找不到对应的备注，但有API传递的备注，则使用API备注
+        if (!empty($v['vod_remarks'])) {
+            return $v['vod_remarks'];
+        }
+
+        return null;
+    }
+
+    /**
+     * 处理视频备注更新逻辑
+     * 根据集数最多的播放组来更新备注
+     */
+    private function handleVodRemarksUpdate($v, $info, $update, $play_group_episode_count)
+    {
+        // 优先使用 API 明确传递的备注（如果不为空且与当前不同）
+        $should_use_api_remarks = !empty($v['vod_remarks']) && $v['vod_remarks'] != $info['vod_remarks'];
+
+        // 如果 API 明确传递了不同的备注，直接使用
+        if ($should_use_api_remarks) {
+            return $v['vod_remarks'];
+        }
+
+        // 根据播放组来更新备注
+        $play_group_episode_count = $this->getPlayGroupEpisodeCount($v, $play_group_episode_count);
+
+        if (!empty($play_group_episode_count)) {
+            // 找出集数最多的播放组
+            $max_episode_play_from = $this->findMaxEpisodePlayGroup($play_group_episode_count);
+
+            // 获取对应播放组的备注
+            $remarks = $this->getRemarksByPlayGroup($v, $update, $max_episode_play_from);
+            if ($remarks !== null) {
+                return $remarks;
+            }
+        }
+
+        // 如果以上都没有找到合适的备注，但有API传递的备注且与当前不同，则使用API备注
+        if (!empty($v['vod_remarks']) && $v['vod_remarks'] != $info['vod_remarks']) {
+            return $v['vod_remarks'];
+        }
+
+        return null;
+    }
+
+    /**
      * 同步图片
      *
      * @param $pic_status int 是否同步。为1时，同步图片
@@ -434,11 +538,13 @@ class Collect extends Base {
     {
         $img_url_downloaded = $pic_url;
         if ($pic_status == 1) {
+            // 清理失败标记，获取真实URL
+            $clean_url = str_replace('#err', '', $pic_url);
             $config = (array)config('maccms.upload');
-            $img_url_downloaded = model('Image')->down_load($pic_url, $config, $flag);
-            if ($img_url_downloaded == $pic_url) {
+            $img_url_downloaded = model('Image')->down_load($clean_url, $config, $flag);
+            if ($img_url_downloaded == $clean_url || strpos($img_url_downloaded, '#err') !== false) {
                 // 下载失败，显示老图信息
-                $des = '<a href="' . $pic_url . '" target="_blank">' . $pic_url . '</a><font color=red>'.lang('download_err').'!</font>';
+                $des = '<a href="' . $clean_url . '" target="_blank">' . $clean_url . '</a><font color=red>'.lang('download_err').'!</font>';
             } else {
                 // 下载成功，显示新图信息
                 if (str_starts_with($img_url_downloaded, 'upload/')) {
@@ -502,13 +608,17 @@ class Collect extends Base {
 
                 foreach($v as $k2=>$v2){
                     if(strpos($k2,'_content')===false && $k2!=='vod_plot_detail') {
-                        $v[$k2] = strip_tags($v2);
+                        $v[$k2] = mac_strip_tags($v2);
                     }
                 }
 
                 $v['type_id_1'] = intval($type_list[$v['type_id']]['type_pid']);
-                $v['vod_en'] = Pinyin::get($v['vod_name']);
-                $v['vod_letter'] = strtoupper(substr($v['vod_en'],0,1));
+                if(empty($v['vod_en'])){
+                    $v['vod_en'] = Pinyin::get($v['vod_name']);
+                }
+                if(empty($v['vod_letter'])){
+                    $v['vod_letter'] = strtoupper(substr($v['vod_en'],0,1));
+                }
                 // 使用资源站的添加时间，更新时间保持当前
                 // https://github.com/magicblack/maccms10/issues/780
                 if (empty($v['vod_time_add']) || strlen($v['vod_time_add']) != 10) {
@@ -637,9 +747,6 @@ class Collect extends Base {
                 if (strpos($config['inrule'], 'h')!==false) {
                     $where['vod_douban_id'] = intval($v['vod_douban_id']);
                 }
-                if ($config['tag'] == 1) {
-                    $v['vod_tag'] = mac_filter_xss(mac_get_tag($v['vod_name'], $v['vod_content']));
-                }
 
                 if(!empty($where['vod_actor']) && !empty($where['vod_director'])){
                     $blend = true;
@@ -756,6 +863,10 @@ class Collect extends Base {
                         })
                         ->find();
                 }
+                // 优化自动生成TAG https://github.com/magicblack/maccms10/issues/1178
+                if ($config['tag'] == 1 && empty($v['vod_tag']) && empty($info['vod_tag'])) {
+                    $v['vod_tag'] = mac_filter_xss(mac_get_tag($v['vod_name'], $v['vod_content']));
+                }
 
                 if (!$info) {
                     // 新增
@@ -802,6 +913,8 @@ class Collect extends Base {
 
                         $update = [];
                         $ec=false;
+                        // 记录每个播放组的集数，用于后续选择集数最多的播放组
+                        $play_group_episode_count = [];
 
                         if($param['filter'] ==1 || $param['filter']==3){
                             $cj_play_from_arr = $collect_filter['play'][$param['filter']]['cj_play_from_arr'];
@@ -824,6 +937,9 @@ class Collect extends Base {
                                 $cj_play_url = $cj_play_url_arr[$k2];
                                 $cj_play_server = $cj_play_server_arr[$k2];
                                 $cj_play_note = $cj_play_note_arr[$k2];
+                                // 统计该播放组的集数
+                                $episode_count = empty($cj_play_url) ? 0 : count(explode('#', $cj_play_url));
+                                $play_group_episode_count[$cj_play_from] = $episode_count;
                                 if ($cj_play_url == $info['vod_play_url']) {
                                     $des .= lang('model/collect/playurl_same');
                                 } elseif (empty($cj_play_from)) {
@@ -847,6 +963,7 @@ class Collect extends Base {
                                     // 同类型播放组
                                     $arr1 = explode("$$$", $old_play_url);
                                     $arr2 = explode("$$$", $old_play_from);
+                                    $arr_note = explode("$$$", $old_play_note);
                                     $play_key = array_search($cj_play_from, $arr2);
                                     if ($arr1[$play_key] == $cj_play_url) {
                                         $des .= lang('model/collect/playgroup_same',[$cj_play_from]);;
@@ -863,9 +980,11 @@ class Collect extends Base {
                                             unset($tmp1,$tmp2);
                                         }
                                         $arr1[$play_key] = $cj_play_url;
+                                        $arr_note[$play_key] = $cj_play_note;
                                         $ec=true;
                                     }
                                     $old_play_url = join('$$$', (array)$arr1);
+                                    $old_play_note = join('$$$', (array)$arr_note);
                                 }
                             }
                             if($ec) {
@@ -952,8 +1071,11 @@ class Collect extends Base {
                                 $update['vod_serial'] = max($v['vod_serial'], $info['vod_serial']);
                             }
                         }
-                        if (strpos(',' . $config['uprule'], 'd')!==false && !empty($v['vod_remarks']) && $v['vod_remarks']!=$info['vod_remarks']) {
-                            $update['vod_remarks'] = $v['vod_remarks'];
+                        if (strpos(',' . $config['uprule'], 'd')!==false) {
+                            $new_remarks = $this->handleVodRemarksUpdate($v, $info, $update, $play_group_episode_count);
+                            if ($new_remarks !== null) {
+                                $update['vod_remarks'] = $new_remarks;
+                            }
                         }
                         if (strpos(',' . $config['uprule'], 'e')!==false && !empty($v['vod_director']) && $v['vod_director']!=$info['vod_director']) {
                             $update['vod_director'] = $v['vod_director'];
@@ -970,7 +1092,7 @@ class Collect extends Base {
                         if (strpos(',' . $config['uprule'], 'i')!==false && !empty($v['vod_lang']) && $v['vod_lang']!=$info['vod_lang']) {
                             $update['vod_lang'] = $v['vod_lang'];
                         }
-                        if (strpos(',' . $config['uprule'], 'j')!==false && (substr($info["vod_pic"], 0, 4) == "http" || empty($info['vod_pic']) ) && $v['vod_pic']!=$info['vod_pic'] ) {
+                        if (strpos(',' . $config['uprule'], 'j')!==false && (substr($info["vod_pic"], 0, 4) == "http" || empty($info['vod_pic']) ) && ($v['vod_pic']!=$info['vod_pic'] || strpos($info['vod_pic'], '#err') !== false) ) {
                             $tmp = $this->syncImages($config_sync_pic, $v['vod_pic'],'vod');
                             $update['vod_pic'] = (string)$tmp['pic'];
                             $msg =$tmp['msg'];
@@ -1280,7 +1402,7 @@ class Collect extends Base {
 
                 foreach($v as $k2=>$v2){
                     if(strpos($k2,'_content')===false) {
-                        $v[$k2] = strip_tags($v2);
+                        $v[$k2] = mac_strip_tags($v2);
                     }
                 }
                 $v['art_name'] = trim($v['art_name']);
@@ -1336,6 +1458,10 @@ class Collect extends Base {
 
                 if(empty($v['art_blurb'])){
                     $v['art_blurb'] = mac_substring( strip_tags( str_replace('$$$','',$v['art_content']) ) ,100);
+                }
+
+                if ($config['tag'] == 1) {
+                    $v['art_tag'] = mac_filter_xss(mac_get_tag($v['art_name'], $v['art_content']));
                 }
 
                 $where = [];
@@ -1410,7 +1536,7 @@ class Collect extends Base {
                                 $update['art_from'] = $v['art_from'];
                             }
 
-                            if(strpos(','.$config['uprule'],'d')!==false && (substr($info["art_pic"], 0, 4) == "http" || empty($info['art_pic']))  && $v['art_pic']!=$info['art_pic'] ){
+                            if(strpos(','.$config['uprule'],'d')!==false && (substr($info["art_pic"], 0, 4) == "http" || empty($info['art_pic']))  && ($v['art_pic']!=$info['art_pic'] || strpos($info['art_pic'], '#err') !== false) ){
                                 $tmp = $this->syncImages($config_sync_pic, $v['art_pic'],'art');
                                 $update['art_pic'] = (string)$tmp['pic'];
                                 $msg =$tmp['msg'];
@@ -1607,7 +1733,7 @@ class Collect extends Base {
 
                 foreach($v as $k2=>$v2){
                     if(strpos($k2,'_content')===false) {
-                        $v[$k2] = strip_tags($v2);
+                        $v[$k2] = mac_strip_tags($v2);
                     }
                 }
                 $v['actor_name'] = trim($v['actor_name']);
@@ -1709,7 +1835,7 @@ class Collect extends Base {
                             if(strpos(','.$config['uprule'],'d')!==false && !empty($v['actor_works']) && $v['actor_works']!=$info['actor_works']){
                                 $update['actor_works'] = $v['actor_works'];
                             }
-                            if(strpos(','.$config['uprule'],'e')!==false && (substr($info["actor_pic"], 0, 4) == "http" ||empty($info['actor_pic']) ) && $v['actor_pic']!=$info['actor_pic'] ){
+                            if(strpos(','.$config['uprule'],'e')!==false && (substr($info["actor_pic"], 0, 4) == "http" ||empty($info['actor_pic']) ) && ($v['actor_pic']!=$info['actor_pic'] || strpos($info['actor_pic'], '#err') !== false) ){
                                 $tmp = $this->syncImages($config_sync_pic, $v['actor_pic'],'actor');
                                 $update['actor_pic'] =$tmp['pic'];
                                 $msg =$tmp['msg'];
@@ -1875,7 +2001,7 @@ class Collect extends Base {
 
                 foreach($v as $k2=>$v2){
                     if(strpos($k2,'_content')===false) {
-                        $v[$k2] = strip_tags($v2);
+                        $v[$k2] = mac_strip_tags($v2);
                     }
                 }
 
@@ -2006,7 +2132,7 @@ class Collect extends Base {
                                 if (strpos(',' . $config['uprule'], 'b') !== false && !empty($v['role_remarks']) && $v['role_remarks'] != $info['role_remarks']) {
                                     $update['role_remarks'] = $v['role_remarks'];
                                 }
-                                if (strpos(',' . $config['uprule'], 'c') !== false && (substr($info["role_pic"], 0, 4) == "http" || empty($info['role_pic'])) && $v['role_pic'] != $info['role_pic']) {
+                                if (strpos(',' . $config['uprule'], 'c') !== false && (substr($info["role_pic"], 0, 4) == "http" || empty($info['role_pic'])) && ($v['role_pic'] != $info['role_pic'] || strpos($info['role_pic'], '#err') !== false)) {
                                     $tmp = $this->syncImages($config_sync_pic,  $v['role_pic'], 'role');
                                     $update['role_pic'] = $tmp['pic'];
                                     $msg = $tmp['msg'];
@@ -2198,7 +2324,7 @@ class Collect extends Base {
 
                 foreach($v as $k2=>$v2){
                     if(strpos($k2,'_content')===false) {
-                        $v[$k2] = strip_tags($v2);
+                        $v[$k2] = mac_strip_tags($v2);
                     }
                 }
                 $v['website_name'] = trim($v['website_name']);
@@ -2303,7 +2429,7 @@ class Collect extends Base {
                             if(strpos(','.$config['uprule'],'d')!==false && !empty($v['website_jumpurl']) && $v['website_jumpurl']!=$info['website_jumpurl']){
                                 $update['website_jumpurl'] = $v['website_jumpurl'];
                             }
-                            if(strpos(','.$config['uprule'],'e')!==false && (substr($info["website_pic"], 0, 4) == "http" ||empty($info['website_pic']) ) && $v['website_pic']!=$info['website_pic'] ){
+                            if(strpos(','.$config['uprule'],'e')!==false && (substr($info["website_pic"], 0, 4) == "http" ||empty($info['website_pic']) ) && ($v['website_pic']!=$info['website_pic'] || strpos($info['website_pic'], '#err') !== false) ){
                                 $tmp = $this->syncImages($config_sync_pic, $v['website_pic'],'website');
                                 $update['website_pic'] =$tmp['pic'];
                                 $msg =$tmp['msg'];
@@ -2469,7 +2595,7 @@ class Collect extends Base {
 
                 foreach($v as $k2=>$v2){
                     if(strpos($k2,'_content')===false) {
-                        $v[$k2] = strip_tags($v2);
+                        $v[$k2] = mac_strip_tags($v2);
                     }
                 }
 
@@ -2838,7 +2964,7 @@ class Collect extends Base {
 
                 foreach($v as $k2=>$v2){
                     if(strpos($k2,'_content')===false) {
-                        $v[$k2] = strip_tags($v2);
+                        $v[$k2] = mac_strip_tags($v2);
                     }
                 }
 

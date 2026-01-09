@@ -923,7 +923,17 @@ function mac_rep_pse_rnd($psearr,$txt,$id=0)
 
 function mac_txt_explain($txt, $decode = false)
 {
-    $txtarr = explode('#',$txt);
+    // 先将HTML实体中的#临时替换为特殊占位符
+    $placeholder = '___HTML_ENTITY_HASH___';
+    $txt = preg_replace('/&#(\d+);/', $placeholder . '$1;', $txt);
+    $txt = preg_replace('/&#x([0-9a-fA-F]+);/', $placeholder . 'x$1;', $txt);
+    // 安全地按#分割
+    $txtarr = explode('#', $txt);
+    // 还原HTML实体中的#
+    foreach($txtarr as &$item) {
+        $item = str_replace($placeholder, '&#', $item);
+    }
+    unset($item);
     $data=[];
     foreach($txtarr as $v){
         if (stripos($v, '=') === false) {
@@ -1239,7 +1249,35 @@ function mac_filter_html($str)
 
 function mac_filter_xss($str)
 {
-    return trim(htmlspecialchars(strip_tags($str), ENT_QUOTES));
+    // 识别URL类型，跳过HTML实体转义
+    // 判断是否为URL格式：http://、https://、//、mac: 开头，或包含 :// 的字符串
+    $trimmed_str = trim($str);
+    if (!empty($trimmed_str)) {
+        // 检查是否为URL格式
+        $is_url = false;
+
+        // 检查是否以常见协议开头（最严格的判断，优先级最高）
+        if (preg_match('/^(https?:\/\/|ftp:\/\/|\/\/|mac:)/i', $trimmed_str)) {
+            $is_url = true;
+        }
+        // 检查是否包含 :// 协议标识符（包含协议但可能不是常见协议）
+        elseif (strpos($trimmed_str, '://') !== false) {
+            $is_url = true;
+        }
+        // 注意：这个条件相对宽松，但只去除HTML标签仍然安全
+        elseif (preg_match('/^[a-zA-Z0-9][a-zA-Z0-9\-\.]*\.[a-zA-Z]{2,}(\/|\?|&|=|$)/', $trimmed_str)) {
+            $is_url = true;
+        }
+
+        if ($is_url) {
+            // URL类型：只去除HTML标签，不进行HTML实体转义
+            // strip_tags() 会去除所有HTML标签，确保安全性
+            return trim(strip_tags($trimmed_str));
+        }
+    }
+
+    // 普通文本：正常进行XSS过滤
+    return trim(htmlspecialchars(strip_tags($trimmed_str), ENT_QUOTES));
 }
 
 function mac_restore_htmlfilter($str) {
@@ -3081,4 +3119,27 @@ if (!function_exists('copydirs')) {
         }
     }
 }
+
+function mac_strip_tags($string) {
+    $pattern = '/&([a-zA-Z0-9#]+);/';
+    
+    $string = preg_replace_callback($pattern, function($matches) {
+        if ($matches[0] === '&lt;') {
+            return '<';
+        }
+        if ($matches[0] === '&gt;') {
+            return '>';
+        }
+        if ($matches[0] === '&nbsp;') {
+            return ' ';
+        }
+        if ($matches[0] === '&amp;') {
+            return '&';
+        }
+        return $matches[0];
+    }, $string);
+    
+    return strip_tags($string);
+}
+
 
